@@ -2,12 +2,17 @@
 using System.Configuration;
 using System.Collections.Specialized;
 using System.Net.Http;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace OnellectTest
 {
     class Program
     {
         public object ConfigurationManager { get; private set; }
+
+        static HttpClient client = new HttpClient();
 
         static int[] generateMas()
         {
@@ -64,14 +69,25 @@ namespace OnellectTest
             int rnd = rand.Next(listSorts.Length);
             if (rnd == 0)
             {
-                Console.WriteLine(listSorts[0]);
+                //Console.WriteLine(listSorts[0]);
                 sortBubble(mas);
             }
             else
             {
-                Console.WriteLine(listSorts[1]);
+                //Console.WriteLine(listSorts[1]);
                 sortInsert(mas);
             }
+        }
+
+
+        static async Task<Uri> sendMasAsync(int[] mas)
+        {
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                "api/mas", mas);
+            response.EnsureSuccessStatusCode();
+
+            // return URI of the created resource.
+            return response.Headers.Location;
         }
 
         static void Main(string[] args)
@@ -88,6 +104,12 @@ namespace OnellectTest
             showMas(massiv);
             var appSettings = ConfigurationSettings.AppSettings;
             finishAddress = appSettings["finishAddress"];
+
+            client.BaseAddress = new Uri("http://localhost:64195/");
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
+            sendMasAsync(massiv);
         }
     }
 }
